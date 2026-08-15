@@ -36,7 +36,7 @@ A Reproducible Black-Box Audit of TR-MMLU"*, lives in [`paper/`](paper/):
 
 | File | Description |
 |------|-------------|
-| [`paper_preprint.pdf`](paper/paper_preprint.pdf) | **Recommended** — named, camera-ready version (author: *Oğuz Emre Cura*). Ready for arXiv or workshop submission. |
+| [`paper_preprint.pdf`](paper/paper_preprint.pdf) | **Recommended** — named, camera-ready version (author: *Oğuz Emre Cura*, `oguzemrecura@gmail.com`, `github.com/oguzcura`). Ready for arXiv or workshop submission. |
 | [`paper.pdf`](paper/paper.pdf) | Anonymous **review** version (no author name — for peer review). |
 | [`paper_preprint.tex`](paper/paper_preprint.tex) | LaTeX source for the preprint (compile this). |
 | [`paper.tex`](paper/paper.tex) | LaTeX source for the anonymous review version. |
