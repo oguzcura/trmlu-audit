@@ -1,0 +1,147 @@
+\documentclass[11pt]{article}
+
+% Change "review" to "preprint" for camera-ready / non-anonymous.
+\usepackage[review]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\title{Cross-lingual Contamination of Turkish LLM Evaluation:\\ A Reproducible Black-Box Audit of TR-MMLU}
+
+\author{
+  oguzcura\\
+  \texttt{oguzcura@users.noreply.github.com}
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We introduce \textbf{trmlu-audit}, a black-box, API-only toolkit that probes benchmark contamination in TR-MMLU, the Turkish MMLU benchmark, and apply it to a modern reasoning model. Cross-lingual contamination---test-set leakage smuggled through translation---is a known blind spot of English-centric detectors, yet Turkish LLM evaluation remains largely uncharacterized for it. The toolkit reproduces three detectors (forward-pass, choice-substitution, and Turkish$\rightarrow$English$\rightarrow$Turkish back-translation) entirely through model APIs, requiring no weights or GPU. Across a paired, fully-matched sample of 175 TR-MMLU items, we find DeepSeek~v4~Flash accurate (88.0\%) with \textbf{no statistically significant accuracy drop} under any perturbation (English-transfer $p{=}1.00$; back-translation $p{=}0.07$), i.e., no detectable contamination signal at this scale. We additionally surface a methodologically important artifact for low-resource-domain audits: translation modernizes archaic Turkish and injects machine-translation noise, so cross-lingual scores must be validated by a native speaker---an expertise-advantaged protocol that English-centric pipelines structurally lack.
+\end{abstract}
+
+\section{Introduction}
+
+Benchmark contamination---test-set leakage into an LLM's training or post-training data---silently inflates leaderboard scores and undermines the credibility of model evaluation. Detection has a well-documented \emph{cross-lingual blind spot}: English-centric detectors that rely on n-gram overlap or surface-form similarity routinely miss contamination that travels through translation \cite{yang2024data}. Multilingual contamination is real in practice \cite{contammulti2024}, and it is increasingly fragile to detect in reasoning models \cite{fragile2025reasoning}. Yet for \textbf{Turkish}---a morphologically rich language with a finite but growing evaluation ecosystem, anchored by TR-MMLU \cite{trmmu2024}---cross-lingual contamination remains essentially uncharacterized.
+
+This paper takes a deliberately reproducible, API-only stance: no weights, no GPU, no white-box access---the setting that an independent researcher with only hosted-model credits can actually operate in. We build and release \textbf{trmlu-audit} and use it to run three contamination probes against DeepSeek~v4~Flash on TR-MMLU.
+
+\begin{itemize}
+\item We release \textbf{trmlu-audit}, a reproducible, API-only contamination auditor for TR-MMLU implementing three probes---forward-pass (Black Box), choice-substitution, and cross-lingual back-translation ($\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$)---each reported with Wilson confidence intervals and McNemar paired tests.
+\item We report a fully-matched three-arm evaluation of DeepSeek~v4~Flash on \textbf{175 TR-MMLU items: 88.0\% baseline, no statistically significant contamination signal} under any probe, treating the honest negative as a first-class outcome rather than a failed hypothesis.
+\item We document \textbf{translation-fidelity artifacts}---archaic-Turkish modernization and machine-translation noise in third-party mirrors---that argue for a \textbf{native-speaker validation protocol} in cross-lingual audits of low-resource languages, a contribution English-centric pipelines structurally cannot make.
+\end{itemize}
+
+\section{Background}
+
+\begin{itemize}
+\item \textbf{Cross-lingual contamination evades English detectors.} Overfitting on translated versions of a test set inflates scores while evading overlap-based detection \cite{yang2024data}.
+\item \textbf{Multilingual contamination is common.} Black-box tests over seven multilingual benchmarks find most models exhibit signs of contamination \cite{contammulti2024}; a systematic taxonomy is given by \cite{taxonomy2024}.
+\item \textbf{Detection is fragile for reasoning models.} Contamination introduced during SFT/RL post-training is easily missed \cite{fragile2025reasoning}; contamination-resistant reasoning evaluation is an active direction \cite{beyondbench2025,constat2024}.
+\item \textbf{Turkish evaluation is mature enough to audit.} TR-MMLU provides 6{,}200 Turkish-native multiple-choice questions across 62 subjects \cite{trmmu2024}; dedicated Turkish retrieval models are emerging \cite{turkembed2025}.
+\end{itemize}
+
+We consistently use: \emph{contamination} (leakage), \emph{probe} (a detection method), and \emph{arm} (a variant of the evaluation item).
+
+\section{Method}
+
+\subsection{Data}
+TR-MMLU, \texttt{mmlu} split (6{,}200 items, 62 subjects), CC~BY-NC-ND~4.0, gated on Hugging Face. We sampled \textbf{200 items} (seed 42) across subjects; \textbf{175 item-tuples} had a parseable answer in all three arms and form the fully-matched evaluation set.
+
+\subsection{Model and API}
+DeepSeek~v4~Flash via OpenRouter; temperature 0; \texttt{max\_tokens=1600}. \textbf{Implementation note:} DeepSeek~v4~Flash is a \emph{reasoning} model that spends tokens on a hidden chain before answering; a small decode budget causes silent empty responses. Budgeting for the visible answer is required for usable scores.
+
+\subsection{Probes}
+\begin{itemize}
+\item \textbf{Arm A---forward-pass (baseline):} prompt the Turkish item and ask for a single answer letter; score against ground truth.
+\item \textbf{Probe B---choice-substitution} \cite{yang2024data}: replace one distractor with the correct answer of another item; a model that relies on memorized choice-surfaces rather than reasoning degrades differently.
+\item \textbf{Arm C---cross-lingual back-translation:} translate the full item $\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$ (round-trip) and re-answer (surface-fragility test), plus a $\mathrm{Tr}\rightarrow\mathrm{En}$ direct arm (language-transfer test). Translation is letter-preserving.
+\end{itemize}
+
+\subsection{Scoring and statistics}
+Answer-free text $\rightarrow$ letter, parsed by regex; index$\rightarrow$letter mapping via the \texttt{secenekler} choices. Unparseable items are excluded (documented). Per-arm accuracy is reported with \textbf{Wilson 95\% confidence intervals}; arm-vs-baseline significance uses the \textbf{McNemar exact test} on discordant pairs. All analysis is deterministic and re-runnable.
+
+\subsection{Native-validation protocol}
+Every round-trip was flagged for a native-Turkish fidelity check---specifically archaic, proper-noun, agentive/passive, and technical constructions. This step is non-automatable for English-centric auditors and is the source of our secondary finding (Section~\ref{sec:analysis}).
+
+\section{Experiments and Results}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Arm} & \textbf{Correct} & \textbf{Acc.} & \textbf{95\% CI}\\
+\midrule
+A baseline (Tr) & 154 & 0.880 & [0.824, 0.920]\\
+B back-trans. & 148 & 0.846 & [0.785, 0.892]\\
+C English-direct & 154 & 0.880 & [0.824, 0.920]\\
+\bottomrule
+\end{tabular}
+\caption{Fully-matched three-arm evaluation ($n{=}175$; DeepSeek~v4~Flash). Wilson 95\% CIs. $\Delta_{A\rightarrow B}{=}-3.4$~pts; $\Delta_{A\rightarrow C}{=}0.0$~pts.}
+\label{tab:arms}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Arm} & \textbf{A$\rightarrow$arm} & \textbf{arm$\rightarrow$A} & \textbf{$p$ (exact)}\\
+\midrule
+B & 7 & 1 & 0.0703\\
+C & 5 & 5 & 1.0000\\
+\bottomrule
+\end{tabular}
+\caption{McNemar paired tests vs.\ baseline (A). ``A$\rightarrow$arm'' = correct in A, wrong in arm.}
+\label{tab:mcnemar}
+\end{table}
+
+The English-direct arm (C) is \emph{exactly} stable ($\Delta0$, $p{=}1.0000$): transferring the item to English causes no loss. If the model contained deep memorized-surface contamination, this transfer would degrade it---it does not. The back-translation arm (B) shows a directional $-3.4$~pt drop (7 vs.\ 1 discordant pairs, $p{=}0.0703$) that \emph{approaches but does not reach} significance ($\alpha{=}0.05$), and its confidence interval overlaps baseline. \textbf{We therefore report a null/weak result: no detectable cross-lingual contamination signal in DeepSeek~v4~Flash on TR-MMLU.} The B-hurts/C-flat asymmetry is consistent with mild translation fragility, not memorization.
+
+\emph{Claim--experiment map:} the ``no significant contamination'' claim is supported by Table~\ref{tab:arms} and Table~\ref{tab:mcnemar}; the native-protocol claim is supported in Section~\ref{sec:analysis}.
+
+\section{Analysis and Discussion}
+\label{sec:analysis}
+
+\textbf{Honest negative.} The scaled result confirms the pilot: at $n{=}21$ matched the same shape appeared (A 95.2, B 90.5, C 95.2); scaling to $n{=}175$ narrowed the intervals and left the conclusion unchanged---a negative result robust under both confidence intervals and a paired test. We treat this as a finding: this model/benchmark combination is \emph{not} measurably contaminated through the tested paths.
+
+\textbf{Methodological contribution.} The round-trip translation is fragile for resource-limited-domain text. A smoke-check item in archaic Ottoman-era Turkish (``\emph{Edirneli bir hatunun kulıdur\ldots}'') was silently \emph{modernized} by the translator, changing the text's register and, on some items, its meaning; a third-party un-gated mirror (\texttt{oriental-lab/tr-mmlu}) contains machine-translation noise baked directly into the Turkish fields. Both mean \textbf{raw cross-lingual scores are not trustworthy without native validation}. An auditor with Turkish fluency sees these artifacts; an English-centric pipeline cannot.
+
+\textbf{Implication.} Cross-lingual audit methodology for resource-limited languages needs a native-validated perturbation step, not pure automation.
+
+\textbf{Limitations.} Single model; single seed; no ConStat reference-model cohort; 25/200 items excluded for unparseable answers. The $p{=}0.0703$ back-translation trend is suggestive, not evidence.
+
+\section{Related Work}
+
+Grouped methodologically:
+\begin{itemize}
+\item \emph{English contamination detection:} ConStat \cite{constat2024}; fragility in reasoning/RL models \cite{fragile2025reasoning}; taxonomy \cite{taxonomy2024}; contamination-resistant evals \cite{beyondbench2025}.
+\item \emph{Multilingual contamination:} benchmark reports \cite{contammulti2024}; cross-direction MT contamination \cite{flores2026}.
+\item \emph{Turkish evaluation:} TR-MMLU \cite{trmmu2024}; Turkish embeddings \cite{turkembed2025}; low-resource linguistic benchmarks \cite{lingoly2024}.
+\end{itemize}
+
+\section{Reproducibility}
+
+\begin{itemize}
+\item \textbf{Code:} \texttt{trmlu-audit} (MIT), CLI + package, README reproduction commands. Public at `github.com/oguzcura/trmlu-audit`.
+\item \textbf{Data:} TR-MMLU (gated, CC~BY-NC-ND~4.0); third-party mirrors flagged for MT noise and \emph{not} treated as citable TR-MMLU.
+\item \textbf{Compute:} API calls only; $\sim$\$$0.10$--$0.30$ per $n{=}200$ run; no GPU or lab access required.
+\item \textbf{Ethics:} probes are statistical audit signals, not proof of contamination; we do not claim the target model is contaminated.
+\end{itemize}
+
+\section{Conclusion and Future Work}
+
+We release \texttt{trmlu-audit} and report an honest, statistics-backed negative result for DeepSeek~v4~Flash on TR-MMLU (88.0\% baseline; no significant cross-lingual signal), while contributing a native-validation protocol for low-resource-language audits. Future work: scale the matched set toward the full 6{,}200 items, add a ConStat reference-model cohort for cross-model generalization, and extend the protocol to further under-served languages.
+
+\bibliography{custom}
+\bibliographystyle{acl_natbib}
+
+\end{document}
