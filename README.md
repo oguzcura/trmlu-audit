@@ -105,9 +105,25 @@ signal** in DeepSeek v4 Flash on TR-MMLU at this scale, while the round-trip
 (arm B) shows a *suggestive, non-significant* fragility direction that motivates
 the paper's native-speaker-validation protocol.
 
-Re-run them with `--limit 200` (or the `crosslingual_probe.py --arms A B C`
-matched runner used for the paper). Note TR-MMLU is **CC BY-NC-ND 4.0** — that
-license governs the dataset, not this tooling.
+Run the exact matched-3-arm runner used for the paper (lives in `repro/`,
+committed to this repo). They use only the `openai` + `datasets` deps already in
+`pyproject.toml`; `analyze_scale3arm.py` additionally needs `scipy`
+(`uv add scipy` or `pip install scipy`):
+
+```bash
+# full 3-arm matched runner (arms A baseline, B back-translation, C English-direct)
+uv run python repro/crosslingual_probe.py --limit 200 --arms A B C --out results/xl.jsonl
+uv run python repro/scale3arm.py            --limit 200 --out results/scale3arm.jsonl
+
+# analyzer reads results/scale3arm.jsonl (hard-coded IN) and prints the Wilson
+# CIs + McNemar table to stdout; redirect to save:
+uv run --with scipy python repro/analyze_scale3arm.py > results/scale3arm_stats.txt
+```
+
+The generic `trmlu-audit` CLI (above) reproduces each probe individually across a
+sampled split; `repro/` holds the paper-specific seed-42 matched runner and its
+analyzer so the n=175 numbers are fully re-derivable from this repository.
+Note TR-MMLU is **CC BY-NC-ND 4.0** — that license governs the dataset, not this tooling.
 
 ## License / ethics
 
