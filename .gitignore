@@ -29,3 +29,11 @@ results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build artifacts (never commit)
+*.pdf
+*.out
+*.aux
+*.bbl
+*.blg
+*.synctex.gz
