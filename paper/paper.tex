@@ -22,7 +22,7 @@
 \maketitle
 
 \begin{abstract}
-We introduce \textbf{trmlu-audit}, a black-box, API-only toolkit that probes benchmark contamination in TR-MMLU, the Turkish MMLU benchmark, and apply it to a modern reasoning model. Cross-lingual contamination---test-set leakage smuggled through translation---is a known blind spot of English-centric detectors, yet Turkish LLM evaluation remains largely uncharacterized for it. The toolkit reproduces three detectors (forward-pass, choice-substitution, and Turkish$\rightarrow$English$\rightarrow$Turkish back-translation) entirely through model APIs, requiring no weights or GPU. Across a paired, fully-matched sample of 175 TR-MMLU items, we find DeepSeek~v4~Flash accurate (88.0\%) with \textbf{no statistically significant accuracy drop} under any perturbation (English-transfer $p{=}1.00$; back-translation $p{=}0.07$), i.e., no detectable contamination signal at this scale. We additionally surface a methodologically important artifact for low-resource-domain audits: translation modernizes archaic Turkish and injects machine-translation noise, so cross-lingual scores must be validated by a native speaker---an expertise-advantaged protocol that English-centric pipelines structurally lack.
+We introduce \textbf{trmlu-audit}, a black-box, API-only toolkit that probes benchmark contamination in TR-MMLU, the Turkish MMLU benchmark, and apply it to a modern reasoning model. Cross-lingual contamination---test-set leakage smuggled through translation---is a known blind spot of English-centric detectors, yet Turkish LLM evaluation remains largely uncharacterized for it. The toolkit reproduces the forward-pass baseline and cross-lingual probes (Turkish$\rightarrow$English$\rightarrow$Turkish back-translation plus a language-transfer arm) entirely through model APIs, requiring no weights or GPU. Across a paired, fully-matched sample of 175 TR-MMLU items, we find DeepSeek~v4~Flash accurate (88.0\%) with \textbf{no statistically significant accuracy drop} under either cross-lingual perturbation (English-transfer $p{=}1.00$; back-translation $p{=}0.07$), i.e., no detectable contamination signal at this scale. We additionally surface a methodologically important artifact for low-resource-domain audits: translation modernizes archaic Turkish and injects machine-translation noise, so cross-lingual scores must be validated by a native speaker---an expertise-advantaged protocol that English-centric pipelines structurally lack.
 \end{abstract}
 
 \section{Introduction}
@@ -32,8 +32,8 @@ Benchmark contamination---test-set leakage into an LLM's training or post-traini
 This paper takes a deliberately reproducible, API-only stance: no weights, no GPU, no white-box access---the setting that an independent researcher with only hosted-model credits can actually operate in. We build and release \textbf{trmlu-audit} and use it to run three contamination probes against DeepSeek~v4~Flash on TR-MMLU.
 
 \begin{itemize}
-\item We release \textbf{trmlu-audit}, a reproducible, API-only contamination auditor for TR-MMLU implementing three probes---forward-pass (Black Box), choice-substitution, and cross-lingual back-translation ($\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$)---each reported with Wilson confidence intervals and McNemar paired tests.
-\item We report a fully-matched three-arm evaluation of DeepSeek~v4~Flash on \textbf{175 TR-MMLU items: 88.0\% baseline, no statistically significant contamination signal} under any probe, treating the honest negative as a first-class outcome rather than a failed hypothesis.
+\item We release \textbf{trmlu-audit}, a reproducible, API-only contamination auditor for TR-MMLU implementing the forward-pass baseline (Black Box) and two cross-lingual probes---back-translation ($\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$) and English-direct transfer---each reported with Wilson confidence intervals and McNemar paired tests.
+\item We report a fully-matched three-arm evaluation of DeepSeek~v4~Flash on \textbf{175 TR-MMLU items: 88.0\% baseline, no statistically significant contamination signal} under either cross-lingual perturbation, treating the honest negative as a first-class outcome rather than a failed hypothesis.
 \item We document \textbf{translation-fidelity artifacts}---archaic-Turkish modernization and machine-translation noise in third-party mirrors---that argue for a \textbf{native-speaker validation protocol} in cross-lingual audits of low-resource languages, a contribution English-centric pipelines structurally cannot make.
 \end{itemize}
 
@@ -59,8 +59,8 @@ DeepSeek~v4~Flash via OpenRouter; temperature 0; \texttt{max\_tokens=1600}. \tex
 \subsection{Probes}
 \begin{itemize}
 \item \textbf{Arm A---forward-pass (baseline):} prompt the Turkish item and ask for a single answer letter; score against ground truth.
-\item \textbf{Probe B---choice-substitution} \cite{yang2024data}: replace one distractor with the correct answer of another item; a model that relies on memorized choice-surfaces rather than reasoning degrades differently.
-\item \textbf{Arm C---cross-lingual back-translation:} translate the full item $\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$ (round-trip) and re-answer (surface-fragility test), plus a $\mathrm{Tr}\rightarrow\mathrm{En}$ direct arm (language-transfer test). Translation is letter-preserving.
+\item \textbf{Arm B---cross-lingual back-translation:} translate the full item $\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$ (round-trip) and re-answer (surface-fragility test); the translation preserves the item structure, including the \texttt{secenekler} answer-letter mapping.
+\item \textbf{Arm C---English-direct (language-transfer test):} translate the full item $\mathrm{Tr}\rightarrow\mathrm{En}$ and re-answer.
 \end{itemize}
 
 \subsection{Scoring and statistics}
@@ -137,7 +137,7 @@ Grouped methodologically:
 
 \section{Conclusion and Future Work}
 
-We release \texttt{trmlu-audit} and report an honest, statistics-backed negative result for DeepSeek~v4~Flash on TR-MMLU (88.0\% baseline; no significant cross-lingual signal), while contributing a native-validation protocol for low-resource-language audits. Future work: scale the matched set toward the full 6{,}200 items, add a ConStat reference-model cohort for cross-model generalization, and extend the protocol to further under-served languages.
+We release \texttt{trmlu-audit} and report an honest, statistics-backed negative result for DeepSeek~v4~Flash on TR-MMLU (88.0\% baseline; no significant cross-lingual signal), while contributing a native-validation protocol for low-resource-language audits. Future work: scale the matched set toward the full 6{,}200 items, add a ConStat reference-model cohort for cross-model generalization, add the choice-substitution probe \cite{yang2024data} as a further detection surface, and extend the protocol to further under-served languages.
 
 \bibliography{custom}
 \bibliographystyle{acl_natbib}

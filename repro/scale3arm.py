@@ -63,27 +63,26 @@ def main():
     f = open(args.out,"w",encoding="utf-8")
     n = len(rows)
     for i, orig in enumerate(rows, 1):
-        truth = idx_letter(orig["cevap"])
         # Arm A: baseline original
         raw_a = arm_answer(cli, orig, lang="tr")
-        rec = {"i": i-1, "bolum": orig["bolum"], "truth": truth,
-               "A_raw": raw_a, "A_ans": parse_letter(raw_a)}
+        rec = {"i": i-1, "bolum": orig["bolum"], "truth_idx": orig["cevap"],
+               "A_raw": raw_a, "A_answer": parse_letter(raw_a)}
         # translate once for C, reuse for B's EN hop
         try:
             nb = to_arm_SRC_backtrans(orig)
             raw_b = arm_answer(cli, nb, lang="tr")
-            rec["B_raw"] = raw_b; rec["B_ans"] = parse_letter(raw_b)
+            rec["B_raw"] = raw_b; rec["B_answer"] = parse_letter(raw_b)
         except Exception as e:
-            rec["B_raw"] = f"ERR:{e}"; rec["B_ans"] = None
+            rec["B_raw"] = f"ERR:{e}"; rec["B_answer"] = None
         try:
             nc = to_arm_SRC_english(orig)
             raw_c = arm_answer(cli, nc, lang="en")
-            rec["C_raw"] = raw_c; rec["C_ans"] = parse_letter(raw_c)
+            rec["C_raw"] = raw_c; rec["C_answer"] = parse_letter(raw_c)
         except Exception as e:
-            rec["C_raw"] = f"ERR:{e}"; rec["C_ans"] = None
+            rec["C_raw"] = f"ERR:{e}"; rec["C_answer"] = None
         f.write(json.dumps(rec, ensure_ascii=False)+"\n")
         f.flush()
-        print(f"[{i}/{n}] {orig['bolum'][:28]:30s} A={rec['A_ans']} B={rec['B_ans']} C={rec['C_ans']}")
+        print(f"[{i}/{n}] {orig['bolum'][:28]:30s} A={rec['A_answer']} B={rec['B_answer']} C={rec['C_answer']}")
     f.close()
     print(f"[✓] done -> {args.out} ({n} items)")
 
