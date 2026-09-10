@@ -13,6 +13,9 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 
+% PDF metadata (title only: the review build is anonymized, so no author metadata)
+\hypersetup{pdftitle={Cross-lingual Contamination of Turkish LLM Evaluation: A Reproducible Black-Box Audit of TR-MMLU}}
+
 \title{Cross-lingual Contamination of Turkish LLM Evaluation:\\ A Reproducible Black-Box Audit of TR-MMLU}
 
 \author{Anonymous Authors}
@@ -32,7 +35,7 @@ Benchmark contamination---test-set leakage into an LLM's training or post-traini
 This paper takes a deliberately reproducible, API-only stance: no weights, no GPU, no white-box access---the setting that an independent researcher with only hosted-model credits can actually operate in. We build and release \textbf{trmlu-audit} and use it to run three contamination probes against DeepSeek~v4~Flash on TR-MMLU.
 
 \begin{itemize}
-\item We release \textbf{trmlu-audit}, a reproducible, API-only contamination auditor for TR-MMLU implementing the forward-pass baseline (Black Box) and two cross-lingual probes---back-translation ($\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$) and English-direct transfer---each reported with Wilson confidence intervals and McNemar paired tests.
+\item We release \textbf{trmlu-audit}, a reproducible, API-only contamination auditor for TR-MMLU implementing the forward-pass baseline and two cross-lingual probes---back-translation ($\mathrm{Tr}\rightarrow\mathrm{En}\rightarrow\mathrm{Tr}$) and English-direct transfer---each reported with Wilson confidence intervals and McNemar paired tests.
 \item We report a fully-matched three-arm evaluation of DeepSeek~v4~Flash on \textbf{175 TR-MMLU items: 88.0\% baseline, no statistically significant contamination signal} under either cross-lingual perturbation, treating the honest negative as a first-class outcome rather than a failed hypothesis.
 \item We document \textbf{translation-fidelity artifacts}---archaic-Turkish modernization and machine-translation noise in third-party mirrors---that argue for a \textbf{native-speaker validation protocol} in cross-lingual audits of low-resource languages, a contribution English-centric pipelines structurally cannot make.
 \end{itemize}
@@ -64,7 +67,7 @@ DeepSeek~v4~Flash via OpenRouter; temperature 0; \texttt{max\_tokens=1600}. \tex
 \end{itemize}
 
 \subsection{Scoring and statistics}
-Answer-free text $\rightarrow$ letter, parsed by regex; index$\rightarrow$letter mapping via the \texttt{secenekler} choices. Unparseable items are excluded (documented). Per-arm accuracy is reported with \textbf{Wilson 95\% confidence intervals}; arm-vs-baseline significance uses the \textbf{McNemar exact test} on discordant pairs. Because this paper reports a family of two arm-vs-baseline McNemar contrasts, Table~\ref{tab:mcnemar} shows every $p$-value both raw and Bonferroni-adjusted for that family ($m{=}2$). As a sensitivity statement for the null arm: with $n{=}175$ matched items and the discordant-pair rate held at its observed value (10/175), the exact McNemar test (two-sided, $\alpha{=}0.05$, 80\% power) detects only accuracy differences of $\approx 5.1$ percentage points or larger; smaller effects would require a larger matched sample. The toolkit additionally implements an M2b-style 0.10 accuracy-degradation threshold (a back-translation arm scoring more than $0.10$ below the English-direct arm) as a flagging rule; it ships with the released toolkit but is not evaluated in this paper. All analysis is deterministic and re-runnable.
+Answer-free text $\rightarrow$ letter, parsed by regex; index$\rightarrow$letter mapping via the \texttt{secenekler} choices. Unparseable items are excluded (documented). Per-arm accuracy is reported with \textbf{Wilson 95\% confidence intervals}; arm-vs-baseline significance uses the \textbf{McNemar exact test} on discordant pairs. Because this paper reports a family of two arm-vs-baseline McNemar contrasts, Table~\ref{tab:mcnemar} shows every $p$-value both raw and Bonferroni-adjusted for that family ($m{=}2$). As a sensitivity statement for the null arm: with $n{=}175$ matched items and the discordant-pair rate held at its observed value (10/175), the exact McNemar test (two-sided, $\alpha{=}0.05$, 80\% power) detects only accuracy differences of $\approx 5.1$ percentage points or larger; smaller effects would require a larger matched sample. The toolkit additionally implements a 0.10 absolute accuracy-degradation flagging rule (a back-translation arm scoring more than $0.10$ below the English-direct arm); it ships with the released toolkit but is not evaluated in this paper. All analysis is deterministic and re-runnable.
 
 \subsection{Native-validation protocol}
 Every round-trip was flagged for a native-Turkish fidelity check---specifically archaic, proper-noun, agentive/passive, and technical constructions. This step is non-automatable for English-centric auditors and is the source of our secondary finding (Section~\ref{sec:analysis}).

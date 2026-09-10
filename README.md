@@ -54,7 +54,7 @@ tectonic paper.tex             # -> paper.pdf (anonymous review version)
 ## Install
 
 ```bash
-git clone <your-repo-url> trmlu-audit
+git clone https://github.com/oguzcura/trmlu-audit.git trmlu-audit
 cd trmlu-audit
 uv sync             # or: pip install -e ".[dev]"
 ```
@@ -83,6 +83,8 @@ trmlu-audit black_box    --limit 100 --out results/bb.jsonl
 trmlu-audit choice_sub   --limit 100 --out results/cs.jsonl
 trmlu-audit crosslingual --limit 30  --arms B C --out results/xl.jsonl
 ```
+
+Note: the Python-API probe name is `choice_substitution`; the CLI command is the shorter `choice_sub`.
 
 ## Reproducing the paper's results
 
@@ -135,5 +137,5 @@ Note TR-MMLU is **CC BY-NC-ND 4.0** — that license governs the dataset, not th
 
 ## Project status
 
-Research / pilot stage. Single-author project by a high-school researcher. Contributions,
+Released — results reproducible via `repro/`. Single-author project by a high-school researcher. Contributions,
 issues, and reproduction reports welcome.
