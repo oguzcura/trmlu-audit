@@ -1,6 +1,9 @@
 """Analyze the Day-5 pilot run (multi-benchmark / multi-model).
 
-Reads results/pilot_audit_2026-08-16.jsonl and computes, per benchmark x model
+Usage: python analyze_pilot_audit.py [in.jsonl] [out_stats.json]
+
+Reads results/pilot_audit_2026-08-16.jsonl by default (repo-relative, as
+produced by repro/pilot_audit.py) and computes, per benchmark x model
 cell (design paper1_contamination_audit.md §4):
 
   - M1:  verbatim-hit rate + Wilson 95% CI; mean 8-gram overlap (+/- sd)
@@ -28,8 +31,10 @@ from math import sqrt
 from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-IN = os.path.join(HERE, "results", "pilot_audit_2026-08-16.jsonl")
-OUT_JSON = os.path.join(HERE, "results", "pilot_stats_2026-08-16.json")
+DEFAULT_IN = os.path.join(HERE, "results", "pilot_audit_2026-08-16.jsonl")
+IN = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_IN
+OUT_JSON = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
+    HERE, "results", "pilot_stats_2026-08-16.json")
 
 BENCHMARKS = ["tr_mmlu", "tumlu_tr", "halluverse_tr", "ragturk_formal5k"]
 MODELS = ["gpt-5.6-luna", "mimo-v2.5", "deepseek-v4-flash"]
@@ -70,6 +75,9 @@ def mean_std(vals):
 # Load
 # ---------------------------------------------------------------------------
 def load():
+    if not os.path.exists(IN):
+        sys.exit(f"[error] input not found: {IN}\n"
+                 f"        usage: python analyze_pilot_audit.py [in.jsonl] [out_stats.json]")
     recs = []
     n_skipped = 0
     with open(IN, encoding="utf-8") as fh:

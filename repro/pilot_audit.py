@@ -38,8 +38,14 @@ import threading
 import time
 from typing import Dict, List, Optional
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "trmlu-audit", "src"))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# Repo-local imports only: trmlu_audit from the repo's src/ layout (editable
+# install fallback) and the M1 scoring helpers from the vendored probe_m1.py
+# in this directory. No dependency on the private audit-harness tree.
+_SRC = os.path.normpath(os.path.join(_HERE, "..", "src"))
+for _p in (_SRC, _HERE):
+    if os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 from trmlu_audit import core  # noqa: E402
 from probe_m1 import overlap8, is_verbatim, cost_estimate, LADDER  # noqa: E402
 

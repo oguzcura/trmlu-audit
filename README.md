@@ -113,8 +113,8 @@ committed to this repo). They use only the `openai` + `datasets` deps already in
 uv run python repro/crosslingual_probe.py --limit 200 --arms A B C --out results/xl.jsonl
 uv run python repro/scale3arm.py            --limit 200 --out results/scale3arm.jsonl
 
-# analyzer reads results/scale3arm.jsonl (hard-coded IN) and prints the Wilson
-# CIs + McNemar table to stdout; redirect to save:
+# analyzer defaults to results/scale3arm.jsonl (or pass a path as the first
+# argument) and prints the Wilson CIs + McNemar table to stdout; redirect to save:
 uv run --with scipy python repro/analyze_scale3arm.py > results/scale3arm_stats.txt
 ```
 

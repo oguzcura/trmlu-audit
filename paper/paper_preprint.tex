@@ -69,7 +69,7 @@ DeepSeek~v4~Flash via OpenRouter; temperature 0; \texttt{max\_tokens=1600}. \tex
 \end{itemize}
 
 \subsection{Scoring and statistics}
-Answer-free text $\rightarrow$ letter, parsed by regex; index$\rightarrow$letter mapping via the \texttt{secenekler} choices. Unparseable items are excluded (documented). Per-arm accuracy is reported with \textbf{Wilson 95\% confidence intervals}; arm-vs-baseline significance uses the \textbf{McNemar exact test} on discordant pairs. All analysis is deterministic and re-runnable.
+Answer-free text $\rightarrow$ letter, parsed by regex; index$\rightarrow$letter mapping via the \texttt{secenekler} choices. Unparseable items are excluded (documented). Per-arm accuracy is reported with \textbf{Wilson 95\% confidence intervals}; arm-vs-baseline significance uses the \textbf{McNemar exact test} on discordant pairs. Because this paper reports a family of two arm-vs-baseline McNemar contrasts, Table~\ref{tab:mcnemar} shows every $p$-value both raw and Bonferroni-adjusted for that family ($m{=}2$). As a sensitivity statement for the null arm: with $n{=}175$ matched items and the discordant-pair rate held at its observed value (10/175), the exact McNemar test (two-sided, $\alpha{=}0.05$, 80\% power) detects only accuracy differences of $\approx 5.1$ percentage points or larger; smaller effects would require a larger matched sample. The toolkit additionally implements an M2b-style 0.10 accuracy-degradation threshold (a back-translation arm scoring more than $0.10$ below the English-direct arm) as a flagging rule; it ships with the released toolkit but is not evaluated in this paper. All analysis is deterministic and re-runnable.
 
 \subsection{Native-validation protocol}
 Every round-trip was flagged for a native-Turkish fidelity check---specifically archaic, proper-noun, agentive/passive, and technical constructions. This step is non-automatable for English-centric auditors and is the source of our secondary finding (Section~\ref{sec:analysis}).
@@ -97,10 +97,10 @@ C English-direct & 154 & 0.880 & [0.824, 0.920]\\
 \small
 \begin{tabular}{lccc}
 \toprule
-\textbf{Arm} & \textbf{A$\rightarrow$arm} & \textbf{arm$\rightarrow$A} & \textbf{$p$ (exact)}\\
+\textbf{Arm} & \textbf{A$\rightarrow$arm} & \textbf{arm$\rightarrow$A} & \textbf{$p$ (raw / Bonf.)}\\
 \midrule
-B & 7 & 1 & 0.0703\\
-C & 5 & 5 & 1.0000\\
+B & 7 & 1 & 0.0703 / 0.1406\\
+C & 5 & 5 & 1.0000 / 1.0000\\
 \bottomrule
 \end{tabular}
 \caption{McNemar paired tests vs.\ baseline (A). ``A$\rightarrow$arm'' = correct in A, wrong in arm.}
